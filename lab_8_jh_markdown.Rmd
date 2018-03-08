@@ -60,4 +60,47 @@ leaflet(oil_sf) %>%
   
 ```
 
+##Make a tmap plot with the Texas state shapefile.
+```{r}
+#Read in the state shapefile layers. st_read calls simple features or layers from a file or database.
+#Make sure the entire shapefile is in the working directory so you can called it with dsn = ".", and then specify the layers all begin with "states."
+states <- st_read(dsn = ".", layer = "states")
+
+tex_border <- states %>%
+  #Filter for only rows with the name Texas.
+  filter(STATE_NAME == "Texas") %>%
+  #You can easily specify your projection by using st_transform, and referencing the CSR/ESPG number.
+  #Make sure that is matches whatever projection your data points are in.
+  st_transform(4326)
+
+#You can ask R to make a super simple plot, and R will take a shot at it.
+#plot(tex_border)
+
+#Let's add points to this map.
+tm_shape(tex_border) +
+  #Specify we want to display a polygon
+  tm_polygons() + 
+  #Specify to add shapes from database oil_sf.
+  tm_shape(oil_sf) +
+  #Specify the type of points to display as these new shapes.
+  tm_dots(size = 0.3)
+```
+
+##Convert the data to spatial points patterns (a combination of the point data and the bounding window). We need to know where the actual observations are , but also some kind of bounding window in which we can evaluate them.
+```{r}
+
+#Convert a dataframe into simple features by using as(), the name of the data, and specify that it is should be "Spatial".
+spill_sp <- as(oil_sf, "Spatial")
+#Conver this new spatial dataframe into a point pattern, "ppp".
+spill_ppp <- as(spill_sp, "ppp")
+
+#Take the texas border and make it spatial to use as a bounding window.
+tx_sp <- as(tex_border, "Spatial")
+#Take the new Texas spatial information and specify it as a window for analysis, "owin".
+tx_owin <- as(tx_sp, "owin")
+
+#Tell R to use columns x and y in spill_ppp for coordinates, and display them in the window defined by tx_owin.
+all_pppp <- ppp(spill_ppp$x, spill_ppp$y, window = tx_owin)
+#Some points might lie just beyond the boundary and won't be displayed. R automaticlaly omits points that don't align between the point pattern and the window. 
+```
 
