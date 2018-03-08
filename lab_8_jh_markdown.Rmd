@@ -1,0 +1,42 @@
+---
+title: "Lab8"
+author: "Justin Heyerdahl"
+date: "3/8/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Load the packages
+```{r}
+library(tidyverse)
+library(sf)
+library(tmap)
+library(leaflet)
+library(spatstat)
+library(maptools)
+```
+
+##Column graph of Texas oil spills
+```{r}
+oil_spills <- read_csv("oil_spills.csv")
+
+df <- oil_spills %>%
+  #If you're columns don't have nice names to work with, you can always just bound the name with ' ', or start typing the column name and it'll come up as an option, and R will add ' ' for you.
+  #Filter for only oil spills that occured in Texas prior to 2017.
+  filter(`Accident State` == "TX" & `Accident Year` < 2017) %>%
+  group_by(`Accident Year`) %>%
+  #Use summarise to create a new grouping called Loss that is the sum of 'Net Loss (Barrels)'.
+  summarise(Loss = sum(`Net Loss (Barrels)`))
+
+#Rename columns to make life easier.
+colnames(df) <- c("Year", "Loss")
+
+#Create a simple column graph of net Loss of oil spills in Texas over Years 2010 - 2016.
+ggplot(df, aes(x = Year, y = Loss)) +
+  geom_col()
+```
+
+
