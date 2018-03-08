@@ -39,4 +39,25 @@ ggplot(df, aes(x = Year, y = Loss)) +
   geom_col()
 ```
 
+##Make a leaflet plot of spill locations in TX in 2016.
+```{r}
+df_loc <- oil_spills %>%
+  filter(`Accident State` ==  "TX" & `Accident Year` == 2016) %>%
+  #Keep only columns for the names below.
+  select(Latitude, Longitude, `Net Loss (Barrels)`)
+
+#Fix the column names to more data analysis friendly names.
+colnames(df_loc) <-c("latitude", "longitude", "net_loss")
+
+#Turn the data into simple features spatial data and assign coordinates. Long first, lat, second. 
+oil_sf <- st_as_sf(df_loc, coords = c("longitude", "latitude"), crs = 4326)
+
+#Make a leaflet map.
+leaflet(oil_sf) %>%
+  #Add a basemap
+  addTiles() %>%
+  addMarkers()
+  
+```
+
 
