@@ -100,7 +100,14 @@ tx_sp <- as(tex_border, "Spatial")
 tx_owin <- as(tx_sp, "owin")
 
 #Tell R to use columns x and y in spill_ppp for coordinates, and display them in the window defined by tx_owin.
-all_pppp <- ppp(spill_ppp$x, spill_ppp$y, window = tx_owin)
+all_ppp <- ppp(spill_ppp$x, spill_ppp$y, window = tx_owin)
 #Some points might lie just beyond the boundary and won't be displayed. R automaticlaly omits points that don't align between the point pattern and the window. 
+```
+
+##A kernel density plot:
+```{r}
+
+#Create a density plot of all the point infromation we just created and make the bubbles 0.4. Make sure to be careful about what you specify the bin width to be. Play with using 0.4 and 0.1, and notice the difference in the map output. It conveys information a little differently, right?
+plot(density(all_ppp, sigma = 0.1))
 ```
 
