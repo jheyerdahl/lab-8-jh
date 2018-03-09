@@ -108,6 +108,55 @@ all_ppp <- ppp(spill_ppp$x, spill_ppp$y, window = tx_owin)
 ```{r}
 
 #Create a density plot of all the point infromation we just created and make the bubbles 0.4. Make sure to be careful about what you specify the bin width to be. Play with using 0.4 and 0.1, and notice the difference in the map output. It conveys information a little differently, right?
-plot(density(all_ppp, sigma = 0.1))
+plot(density(all_ppp, sigma = 0.4))
 ```
 
+##Quadrat test for spatial evenness.
+```{r}
+#Tell R what data to use, and where to draw your quadrants. For example, 5 quadrants horizontally and 5 quadrants vertically. This can be super dangerous because it is so easy. Notice WE are deciding where these quadrants are drawn.
+oil_qt <- quadrat.test(all_ppp, nx = 5, ny = 5)
+oil_qt
+#This performs a chi-squared test of CSR to determine whether quadrants are significantly different from one another. It tests the null hypothesis that the data point patterns follow CSR (complete spatial randomness). Based on this result, we REJECT the null hypothesis and RETAIN the alternative, that the data are NOT spatially random.
+
+plot(all_ppp)
+plot(oil_qt, add = TRUE, cex = 0.4)
+#This shows you where the counts are, if they are outside of the bounding window they appear as plus signs instead of circles. If the data were truly spatially random, all the quadrants should have a count of oil spills of 14.5. 
+
+#Each quadrant has an "expected number of events" if the data were truly evenly distributed. The upper right number is the expectd counts, the upper left is the actual counts, and in the bottom is a standardized measure of how different actual is frome expected.
+
+```
+
+##G-Function for Nearest Neighbor Analysis
+```{r}
+#First make a sequence of values for r to represent the lag between observations
+r <- seq(0,1, by = 0.01)
+#Calculate the g-function for all the values of r, and then compare to the expected values for CSR.We thus need to also simulate the CSR data based on on Poisson distribution, recognizing the window that we crateed, and the number of points that exist in it, what the data would look like if it were truely CSR data.
+
+#Tell R to use our point data, apply the model for g-estimation, the distances over which we want to calculate (r), for 100 simulations for CSR. Note that you could also run this for a K-estimate instead of G.
+oil_gfun <- envelope(all_ppp, fun = Gest, r = r, nsim = 100)
+
+#If you look at oil_gfun, it'll give you the lag for values that range from 0 to 1 in increments of 0.01. Obs are observed values. The "theo" column is the CSR value based on our 100 simulations. Lo and Hi are the confidence intervals.
+
+#Plot both the actual and modeled data. You can specify the second line by specify different aesthetics in the second geom_line() entry (also helpful to use different colors).
+ggplot(oil_gfun, aes(x = r, y = obs)) +
+  geom_line(color = "black") +
+  geom_line(aes(x = r, y = theo), color = "red")
+```
+This is telling us that our dat has a higher porportion of data with nearest neighbors at close distances compared to our modeled CSR data.
+
+What this is telling us is that r observed data has a higher proportion of point pairs with nearest neighbors at shorter distances compared to CSR data. It basically means that on average our data points tend to have a nearest neighbor closer than what we would expect under a CSR distribution.
+
+
+##Nearest neighbor using the L-function (aka Ripley's K, standardized)
+```{r}
+#Create a new sequence of values called r2, like we did before. You can speed up simulation processing by assigning a larger lag.
+r2 <- seq(0,3, by = 0.5)
+
+#This is more computationally extensive simulation, so be careful. It looks at every single point in space that has an event, and makes the icnreasing bubbles around it until it encompasses all observations. Global = TRUE tells R to include ALL observations in the window.
+oil_lfun <- envelope(all_ppp, fun = Lest, r = r2, nsim = 20, global = TRUE)
+
+ggplot(oil_lfun, aes(x = r2, y = obs)) +
+  geom_line(color = "black") +
+  geom_line(aes(x = r2, y = theo), color = "blue")
+```
+The takeaway is similar. There are more neighbors that exist at small distances as compared to what we would observed in a CSR simulation. Note that this is similar to what we saw with the g-function method. Just keep in mind that whenever you are using the L-function (Ripley's K) method, it is computationally more intensive, so if you tell it to do a ton of simulations it will take a lot longer than g-function.
